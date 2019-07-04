@@ -19,10 +19,27 @@ class Scene: SKScene {
         // Called before each frame is rendered
     }
     
+    //Detect user touches
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
+        //Detect user screen touch
+        guard let touch = touches.first else { return }
         
+        //Detect positon of user touch
+        let location = touch.location(in: self)
         
+        //Detect if a node is at touched location
+        let nodesTouched = nodes(at: location)
         
+        //Remove label nodes touched by user with animation
+        if let node = nodesTouched.first {
+            
+            let scaleOut = SKAction.scale(to: 2, duration: 0.2)
+            let fadeOut = SKAction.fadeOut(withDuration: 0.2)
+            let group = SKAction.group([scaleOut, fadeOut])
+            let sequence = SKAction.sequence([group, SKAction.removeFromParent()])
+            node.run(sequence)
+            
+        }
     }
 }
