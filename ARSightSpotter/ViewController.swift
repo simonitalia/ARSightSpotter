@@ -13,6 +13,8 @@ import CoreLocation
 
 class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDelegate {
     
+    @IBOutlet var sceneView: ARSKView!
+    
     let locationManager = CLLocationManager()
     var userLocation = CLLocation()
     
@@ -20,10 +22,8 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
     var userHeading = 0.0
     var headingCount = 0
     
-    var pagesDict = [UUID: String]()
-    
-    @IBOutlet var sceneView: ARSKView!
-    
+    var pages = [UUID: String]()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -68,7 +68,7 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
     func view(_ view: ARSKView, nodeFor anchor: ARAnchor) -> SKNode? {
         
         //Create Title Label node at this anchor point, and position text within label node
-        let titleNode = SKLabelNode(text: pagesDict[anchor.identifier])
+        let titleNode = SKLabelNode(text: pages[anchor.identifier])
         titleNode.horizontalAlignmentMode  = .center
         titleNode.verticalAlignmentMode = .center
         
@@ -131,25 +131,46 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
     func fetchSightsData() {
         
         //Pass in users location to urlString
-        let urlString = "https://en.wikipedia.org/w/api.php?ggscoord=\(userLocation.coordinate.latitude)%7C\(userLocation.coordinate.longitude)&action=query&prop=coordinates%7Cpageimages%7Cpageterms&colimit=50&piprop=thumbnail&pithumbsize=500&pilimit=50&wbptterms=description&generator=geosearch&ggsradius=10000&ggslimit=50&format=json"
+        let urlString =
+        
+        //Actual lat / long inputs for fetched wiki data
+        "https://en.wikipedia.org/w/api.php?ggscoord=\(userLocation.coordinate.latitude)%7C\(userLocation.coordinate.longitude)&action=query&prop=coordinates%7Cpageimages%7Cpageterms&colimit=50&piprop=thumbnail&pithumbsize=500&pilimit=50&wbptterms=description&generator=geosearch&ggsradius=10000&ggslimit=50&format=json"
+        
         guard let url = URL(string: urlString) else { return }
         
         if let data = try? Data(contentsOf: url) {
             sightsJSON = JSON(data)
             locationManager.startUpdatingHeading()
                 //request user's heading
+            
+            //Print returned JSON Data to debug console to verify data is received
+            print("JSON Data: \(sightsJSON ?? "No Data")")
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
+        
+        DispatchQueue.main.async {
+            self.headingCount += 1
+            if self.headingCount != 2 { return }
+            
+            self.userHeading = newHeading.magneticHeading
+            self.locationManager.stopUpdatingHeading()
+            self.createSights()
+            
         }
     }
     
     func createSights() {
         
         //Loop over all returned wikipedia pages / sights (sent back as a dict)
-        for page in sightsJSON["query"]["pagesDict"].dictionaryValue.values {
+        for page in sightsJSON["query"]["pages"].dictionaryValue.values {
             
             //Pull out the coordinates of each pages  and set a CLLocation with them
             let locationLat = page["coordinates"][0]["lat"].doubleValue
             let locationLon = page["coordinates"][0]["lon"].doubleValue
             let location = CLLocation(latitude: locationLat, longitude: locationLon)
+            
             
             //Calculate distance of user to pages location, then calculate it's  direction as well (the azimuth)
             let distance = Float(userLocation.distance(from: location))
@@ -167,6 +188,7 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
             
             //Multiply hor and vert matrices, multiply result with ARKit camera transform
             let rotation = simd_mul(rotationHorizontal, rotationVertical)
+           
             guard let sceneView = self.view as? ARSKView else { return }
             guard let frame = sceneView.session.currentFrame else { return }
             let rotation2 = simd_mul(frame.camera.transform, rotation)
@@ -179,23 +201,7 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
             //Place anchor at new transform, then add entry to pagesDict
             let anchor = ARAnchor(transform: transform)
             sceneView.session.add(anchor: anchor)
-            pagesDict[anchor.identifier] = page["title"].string ?? "Unknown"
-            
-        }
-        
-        
-    }
-    
-    func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
-        
-        DispatchQueue.main.async {
-            self.headingCount += 1
-            
-            if self.headingCount != 2 { return }
-            self.userHeading = newHeading.magneticHeading
-            
-            self.locationManager.stopUpdatingHeading()
-            self.createSights()
+            pages[anchor.identifier] = page["title"].string ?? "Unknown"
             
         }
     }
@@ -222,7 +228,6 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
         
         let lon_delta = lon2 - lon1
         let y = sin(lon_delta) * cos(lon2)
-        
         let x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon_delta)
         
         let radians = atan2(y, x)
