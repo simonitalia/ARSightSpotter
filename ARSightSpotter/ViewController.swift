@@ -118,6 +118,9 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
         guard let location = locations.last else { return }
         userLocation = location
         
+        //Print location set to console to verify location in use
+        print("Set Location: \(userLocation)")
+        
         //Fetch sight info from wikipedia API via background thread
         DispatchQueue.global().async {
             self.fetchSightsData()
