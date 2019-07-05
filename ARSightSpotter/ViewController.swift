@@ -17,6 +17,9 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
     
     let locationManager = CLLocationManager()
     var userLocation = CLLocation()
+   
+    //Cpature user's distance from point of interest
+    var actualDistance: Float = 0.0
     
     var sightsJSON: JSON!
     var userHeading = 0.0
@@ -68,12 +71,18 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
     func view(_ view: ARSKView, nodeFor anchor: ARAnchor) -> SKNode? {
         
         //Create Title Label node at this anchor point, and position text within label node
-        let titleNode = SKLabelNode(text: pages[anchor.identifier])
-        titleNode.horizontalAlignmentMode  = .center
-        titleNode.verticalAlignmentMode = .center
+        let titleLabelNode = SKLabelNode(text: pagesDict[anchor.identifier])
+        titleLabelNode.horizontalAlignmentMode  = .center
+        titleLabelNode.verticalAlignmentMode = .center
         
         //Scale up the Title label size so we have some padding
-        let size = titleNode.frame.size.applying(CGAffineTransform(scaleX: 1.1, y: 1.4))
+        let size = titleLabelNode.frame.size.applying(CGAffineTransform(scaleX: 1.1, y: 1.4))
+        
+        //Create distance Label node to show user actual distance to sight
+        let distanceLabelNode = SKLabelNode(text: String(actualDistance))
+        
+        //Add distance label node as child to titleNode
+        titleLabelNode.addChild(distanceLabelNode)
         
         //Create background node, fill with random color, set border/stroke
         let backgroundNode = SKShapeNode(rectOf: size, cornerRadius: 10)
@@ -82,7 +91,7 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
         backgroundNode.lineWidth = 2
         
         //Add titleNode as child to backgroundNode, return parent node to scene
-        backgroundNode.addChild(titleNode)
+        backgroundNode.addChild(titleLabelNode)
         return backgroundNode
         
     }
@@ -173,7 +182,26 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
             
             
             //Calculate distance of user to pages location, then calculate it's  direction as well (the azimuth)
-            let distance = Float(userLocation.distance(from: location))
+            
+            //Set min / max distance paremters for label nodes
+            let minDistance: Float = -1.5
+            let maxDistance: Float = -0.5
+            var distance: Float = 0.0
+            
+            //Get actual distance
+            actualDistance = Float(userLocation.distance(from: location))
+            
+            //Assign distance, within min / max parameters
+            if actualDistance > maxDistance {
+                distance = maxDistance
+
+            } else if actualDistance < minDistance {
+                distance = minDistance
+
+            } else {
+                distance = actualDistance
+            }
+            
             let azimuthFromUser = direction(from: userLocation, to: location)
             
             //Figure out the direction of the sight, using user's heading, convert direction to radians
@@ -201,7 +229,22 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
             //Place anchor at new transform, then add entry to pagesDict
             let anchor = ARAnchor(transform: transform)
             sceneView.session.add(anchor: anchor)
-            pages[anchor.identifier] = page["title"].string ?? "Unknown"
+            pagesDict[anchor.identifier] = page["title"].string ?? "Unknown"
+            
+        }
+
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
+        
+        DispatchQueue.main.async {
+            self.headingCount += 1
+            
+            if self.headingCount != 2 { return }
+            self.userHeading = newHeading.magneticHeading
+            
+            self.locationManager.stopUpdatingHeading()
+            self.createSights()
             
         }
     }
