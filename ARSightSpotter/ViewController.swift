@@ -18,8 +18,9 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
     let locationManager = CLLocationManager()
     var userLocation = CLLocation()
    
-    //Cpature user's distance from point of interest
+    //Caature user's distance from point of interest
     var actualDistance: Float = 0.0
+//    var distance: Float = 0.0
     
     var sightsJSON: JSON!
     var userHeading = 0.0
@@ -71,7 +72,7 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
     func view(_ view: ARSKView, nodeFor anchor: ARAnchor) -> SKNode? {
         
         //Create Title Label node at this anchor point, and position text within label node
-        let titleLabelNode = SKLabelNode(text: pagesDict[anchor.identifier])
+        let titleLabelNode = SKLabelNode(text: pages[anchor.identifier])
         titleLabelNode.horizontalAlignmentMode  = .center
         titleLabelNode.verticalAlignmentMode = .center
         
@@ -184,12 +185,13 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
             //Calculate distance of user to pages location, then calculate it's  direction as well (the azimuth)
             
             //Set min / max distance paremters for label nodes
-            let minDistance: Float = -1.5
-            let maxDistance: Float = -0.5
+            let minDistance: Float = -200
+            let maxDistance: Float = -300
             var distance: Float = 0.0
             
             //Get actual distance
-            actualDistance = Float(userLocation.distance(from: location))
+            distance = Float(userLocation.distance(from: location))
+            print(distance)
             
             //Assign distance, within min / max parameters
             if actualDistance > maxDistance {
@@ -229,24 +231,10 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
             //Place anchor at new transform, then add entry to pagesDict
             let anchor = ARAnchor(transform: transform)
             sceneView.session.add(anchor: anchor)
-            pagesDict[anchor.identifier] = page["title"].string ?? "Unknown"
+            pages[anchor.identifier] = page["title"].string ?? "Unknown"
             
         }
 
-    }
-    
-    func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
-        
-        DispatchQueue.main.async {
-            self.headingCount += 1
-            
-            if self.headingCount != 2 { return }
-            self.userHeading = newHeading.magneticHeading
-            
-            self.locationManager.stopUpdatingHeading()
-            self.createSights()
-            
-        }
     }
     
     //Degrees to radians
