@@ -13,21 +13,17 @@ import CoreLocation
 
 class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDelegate {
     
+    @IBOutlet var sceneView: ARSKView!
+    
     let locationManager = CLLocationManager()
     var userLocation = CLLocation()
-    
-    //Artificial Locations
-    let londonLat = 51.5073509
-    let londonLon = -0.1277583
     
     var sightsJSON: JSON!
     var userHeading = 0.0
     var headingCount = 0
     
-    var pagesDict = [UUID: String]()
-    
-    @IBOutlet var sceneView: ARSKView!
-    
+    var pages = [UUID: String]()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -72,7 +68,7 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
     func view(_ view: ARSKView, nodeFor anchor: ARAnchor) -> SKNode? {
         
         //Create Title Label node at this anchor point, and position text within label node
-        let titleNode = SKLabelNode(text: pagesDict[anchor.identifier])
+        let titleNode = SKLabelNode(text: pages[anchor.identifier])
         titleNode.horizontalAlignmentMode  = .center
         titleNode.verticalAlignmentMode = .center
         
@@ -122,6 +118,9 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
         guard let location = locations.last else { return }
         userLocation = location
         
+        //Print location set to console to verify location in use
+        print("Set Location: \(userLocation)")
+        
         //Fetch sight info from wikipedia API via background thread
         DispatchQueue.global().async {
             self.fetchSightsData()
@@ -143,13 +142,29 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
             sightsJSON = JSON(data)
             locationManager.startUpdatingHeading()
                 //request user's heading
+            
+            //Print returned JSON Data to debug console to verify data is received
+            print("JSON Data: \(sightsJSON ?? "No Data")")
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
+        
+        DispatchQueue.main.async {
+            self.headingCount += 1
+            if self.headingCount != 2 { return }
+            
+            self.userHeading = newHeading.magneticHeading
+            self.locationManager.stopUpdatingHeading()
+            self.createSights()
+            
         }
     }
     
     func createSights() {
         
         //Loop over all returned wikipedia pages / sights (sent back as a dict)
-        for page in sightsJSON["query"]["pagesDict"].dictionaryValue.values {
+        for page in sightsJSON["query"]["pages"].dictionaryValue.values {
             
             //Pull out the coordinates of each pages  and set a CLLocation with them
             let locationLat = page["coordinates"][0]["lat"].doubleValue
@@ -173,6 +188,7 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
             
             //Multiply hor and vert matrices, multiply result with ARKit camera transform
             let rotation = simd_mul(rotationHorizontal, rotationVertical)
+           
             guard let sceneView = self.view as? ARSKView else { return }
             guard let frame = sceneView.session.currentFrame else { return }
             let rotation2 = simd_mul(frame.camera.transform, rotation)
@@ -185,23 +201,7 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
             //Place anchor at new transform, then add entry to pagesDict
             let anchor = ARAnchor(transform: transform)
             sceneView.session.add(anchor: anchor)
-            pagesDict[anchor.identifier] = page["title"].string ?? "Unknown"
-            
-        }
-        
-        
-    }
-    
-    func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
-        
-        DispatchQueue.main.async {
-            self.headingCount += 1
-            
-            if self.headingCount != 2 { return }
-            self.userHeading = newHeading.magneticHeading
-            
-            self.locationManager.stopUpdatingHeading()
-            self.createSights()
+            pages[anchor.identifier] = page["title"].string ?? "Unknown"
             
         }
     }
@@ -228,7 +228,6 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
         
         let lon_delta = lon2 - lon1
         let y = sin(lon_delta) * cos(lon2)
-        
         let x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon_delta)
         
         let radians = atan2(y, x)
