@@ -74,16 +74,19 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
         //Create Title Label node at this anchor point, and position text within label node
         let titleLabelNode = SKLabelNode(text: pages[anchor.identifier])
         titleLabelNode.horizontalAlignmentMode  = .center
-        titleLabelNode.verticalAlignmentMode = .center
+        titleLabelNode.verticalAlignmentMode = .top
+        titleLabelNode.name = "childNode"
         
         //Scale up the Title label size so we have some padding
         let size = titleLabelNode.frame.size.applying(CGAffineTransform(scaleX: 1.1, y: 1.4))
         
         //Create distance Label node to show user actual distance to sight
-        let distanceLabelNode = SKLabelNode(text: String(actualDistance))
+        let distanceLabelNode = SKLabelNode(text: String("Distance: \(actualDistance)m"))
+        distanceLabelNode.verticalAlignmentMode = .bottom
+        distanceLabelNode.name = "childNode"
         
         //Add distance label node as child to titleNode
-        titleLabelNode.addChild(distanceLabelNode)
+//        titleLabelNode.addChild(distanceLabelNode)
         
         //Create background node, fill with random color, set border/stroke
         let backgroundNode = SKShapeNode(rectOf: size, cornerRadius: 10)
@@ -93,6 +96,8 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
         
         //Add titleNode as child to backgroundNode, return parent node to scene
         backgroundNode.addChild(titleLabelNode)
+        backgroundNode.addChild(distanceLabelNode)
+        backgroundNode.name = "containerNode"
         return backgroundNode
         
     }

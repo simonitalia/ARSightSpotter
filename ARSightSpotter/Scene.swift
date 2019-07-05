@@ -34,12 +34,21 @@ class Scene: SKScene {
         //Remove label nodes touched by user with animation
         if let node = nodesTouched.first {
             
+            //Set animation actions
             let scaleOut = SKAction.scale(to: 2, duration: 0.2)
             let fadeOut = SKAction.fadeOut(withDuration: 0.2)
             let group = SKAction.group([scaleOut, fadeOut])
             let sequence = SKAction.sequence([group, SKAction.removeFromParent()])
-            node.run(sequence)
             
+            //Run actions on applicable node, remove node from parent
+            if node.name == "containerNode" {
+                node.run(sequence)
+            }
+            
+            if node.name == "childNode" {
+                let parent = node.parent
+                parent?.run(sequence)
+            }
         }
     }
 }
