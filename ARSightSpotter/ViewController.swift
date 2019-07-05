@@ -16,6 +16,10 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
     let locationManager = CLLocationManager()
     var userLocation = CLLocation()
     
+    //Artificial Locations
+    let londonLat = 51.5073509
+    let londonLon = -0.1277583
+    
     var sightsJSON: JSON!
     var userHeading = 0.0
     var headingCount = 0
@@ -128,7 +132,11 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
     func fetchSightsData() {
         
         //Pass in users location to urlString
-        let urlString = "https://en.wikipedia.org/w/api.php?ggscoord=\(userLocation.coordinate.latitude)%7C\(userLocation.coordinate.longitude)&action=query&prop=coordinates%7Cpageimages%7Cpageterms&colimit=50&piprop=thumbnail&pithumbsize=500&pilimit=50&wbptterms=description&generator=geosearch&ggsradius=10000&ggslimit=50&format=json"
+        let urlString =
+        
+        //Actual lat / long inputs for fetched wiki data
+        "https://en.wikipedia.org/w/api.php?ggscoord=\(userLocation.coordinate.latitude)%7C\(userLocation.coordinate.longitude)&action=query&prop=coordinates%7Cpageimages%7Cpageterms&colimit=50&piprop=thumbnail&pithumbsize=500&pilimit=50&wbptterms=description&generator=geosearch&ggsradius=10000&ggslimit=50&format=json"
+        
         guard let url = URL(string: urlString) else { return }
         
         if let data = try? Data(contentsOf: url) {
@@ -147,6 +155,7 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
             let locationLat = page["coordinates"][0]["lat"].doubleValue
             let locationLon = page["coordinates"][0]["lon"].doubleValue
             let location = CLLocation(latitude: locationLat, longitude: locationLon)
+            
             
             //Calculate distance of user to pages location, then calculate it's  direction as well (the azimuth)
             let distance = Float(userLocation.distance(from: location))
