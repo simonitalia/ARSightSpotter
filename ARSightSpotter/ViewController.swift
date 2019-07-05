@@ -15,10 +15,6 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
     
     let locationManager = CLLocationManager()
     var userLocation = CLLocation()
-    
-    //Artificial Locations
-    let londonLat = 51.5073509
-    let londonLong = -0.1277583
    
     //Cpature user's distance from point of interest
     var actualDistance: Float = 0.0
@@ -141,9 +137,8 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
     func fetchSightsData() {
         
         //Pass in users location to urlString
-        let urlString = "https://en.wikipedia.org/w/api.php?ggscoord=\(londonLat)%7C\(londonLong)&action=query&prop=coordinates%7Cpageimages%7Cpageterms&colimit=50&piprop=thumbnail&pithumbsize=500&pilimit=50&wbptterms=description&generator=geosearch&ggsradius=10000&ggslimit=50&format=json"
-
-        //Actual lat / long inputs for fetched wiki data        "https://en.wikipedia.org/w/api.php?ggscoord=\(userLocation.coordinate.latitude)%7C\(userLocation.coordinate.longitude)&action=query&prop=coordinates%7Cpageimages%7Cpageterms&colimit=50&piprop=thumbnail&pithumbsize=500&pilimit=50&wbptterms=description&generator=geosearch&ggsradius=10000&ggslimit=50&format=json"
+        let urlString =
+        "https://en.wikipedia.org/w/api.php?ggscoord=\(userLocation.coordinate.latitude)%7C\(userLocation.coordinate.longitude)&action=query&prop=coordinates%7Cpageimages%7Cpageterms&colimit=50&piprop=thumbnail&pithumbsize=500&pilimit=50&wbptterms=description&generator=geosearch&ggsradius=10000&ggslimit=50&format=json"
         
         guard let url = URL(string: urlString) else { return }
         
