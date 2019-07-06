@@ -20,7 +20,6 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
    
     //Caature user's distance from point of interest
     var actualDistance: Float = 0.0
-//    var distance: Float = 0.0
     
     var sightsJSON: JSON!
     var userHeading = 0.0
@@ -195,8 +194,8 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
             var distance: Float = 0.0
             
             //Get actual distance
-            distance = Float(userLocation.distance(from: location))
-            print(distance)
+            actualDistance = Float(userLocation.distance(from: location))
+            print("Real distance: \(actualDistance)")
             
             //Assign distance, within min / max parameters
             if actualDistance > maxDistance {
@@ -208,6 +207,8 @@ class ViewController: UIViewController, ARSKViewDelegate, CLLocationManagerDeleg
             } else {
                 distance = actualDistance
             }
+            
+            print("Distance: \(distance)")
             
             let azimuthFromUser = direction(from: userLocation, to: location)
             
