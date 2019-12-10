@@ -37,7 +37,7 @@ This iOS app project is from the iBook “Advanced iOS Volumes Series, authored 
 
 - JSON
 
-- Wikipedia API (
+- Wikipedia API
 
 # Completed
 July, 2019
